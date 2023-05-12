@@ -1,6 +1,7 @@
 import requests
 import os
 import time
+import sys
 import re
 from openpyxl import Workbook
 from openpyxl import load_workbook
@@ -13,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from threading import Timer
-import threading
+import multiprocessing
 capa = DesiredCapabilities.CHROME
 capa["pageLoadStrategy"] = "eager"
 option=ChromeOptions()
@@ -157,9 +158,17 @@ def download(aurl,name):
         f.close()
         print(name+'   '+str(i))
         i=i+1
-
+def savedata(data):
+    countryname=data[0][0]
+    species=data[0][1]
+    data.remove(data[0])
+    wb=load_workbook(countryname+'_'+species+'.xlsx')
+    ws=wb.active
+    for item in data:
+        ws.append(item)
+    wb.save(countryname+'_'+species+'.xlsx')
 def getlist(species,countryid,countryname):
-
+    
     if not os.path.exists(countryname+'_'+species+'.xlsx'):
         # f=open(countryname+'_'+species+'.xls','a',encoding='utf-8')
         # f.write('Latin'+'\t')
@@ -174,14 +183,16 @@ def getlist(species,countryid,countryname):
         print(countryname+'_'+species+'.xlsx'+' already exists')
         return
 
-    for page in range(1,20):
-        speciesurl='https://api.inaturalist.org/v1/observations/species_counts?verifiable=true&spam=false&place_id='+countryid+'&iconic_taxa%5B%5D='+species+'&locale=zh-CN&page='+str(page)+'&per_page=50'
+    for page in range(1,2000000):
+        data=[[countryname,species]]
+        speciesurl='https://api.inaturalist.org/v1/observations/species_counts?verifiable=true&spam=false&place_id='+countryid+'&iconic_taxa%5B%5D='+species+'&locale=zh-CN&page='+str(page)+'&per_page=200'
         r=requests.get(speciesurl,headers=headers)
-        print('saving ' +countryname+'  '+species+' page :'+str(page))
-        aaa=re.findall('("count":.*?)"english_common_name',r.text)
+        #print('saving ' +countryname+'  '+species+' page :'+str(page))
+        aaa=re.findall('("count":.*?)}}',r.text)
         if(len(aaa)==0):
             print('over')
             return
+        print('saving ' +countryname+'  '+species+' page :'+str(page)+' number: '+str(len(aaa)))
         for item in aaa:
             latin=re.findall('name":"(.*?)","rank',item)
 
@@ -202,11 +213,10 @@ def getlist(species,countryid,countryname):
                 photo='NULL'
             else:
                 photo=photo[0]
-            
-            wb=load_workbook(countryname+'_'+species+'.xlsx')
-            ws=wb.active
-            ws.append([latin,chinese,photo])
-            wb.save(countryname+'_'+species+'.xlsx')
+            data.append([latin,chinese,photo])
+        t=multiprocessing.Process(target=savedata,args=(data,))
+        t.start()
+        #t.join()
             # f=open(countryname+'_'+species+'.xls','a',encoding='utf-8')
             # try:
             #     f.write(latin[0]+'\t')
@@ -229,14 +239,18 @@ def getlist(species,countryid,countryname):
 speciesls=['Aves',    'Amphibia',   'Reptilia',   'Mammalia',   'Actinopterygii',   'Mollusca',
     'Arachnida',   'Insecta', 'Plantae',  'Fungi',  'Protozoa',  'unknown']
 if __name__ == "__main__":
+    
+    multiprocessing.freeze_support()
     print('请输入国家名称：')
     countryinput=input()
     countryurl='https://api.inaturalist.org/v1/search?callback=placeAutocompleteCallback&q='+countryinput+'&per_page=10&sources=places'
     r=requests.get(countryurl,headers=headers)
     aaa=re.findall('id":(.*?),"uuid',r.text)
+    
     countryname=re.findall('"matches":\["(.*?)"',r.text)[0]
     if len(aaa)==0:
         print('没有找到，请重新输入')
+        sys.exit()
     else:
         print(countryname)
         counrtyid=aaa[0]

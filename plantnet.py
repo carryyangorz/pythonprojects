@@ -42,76 +42,89 @@ countryls=['WorldFlora','UsefulPlants','Weeds','InvasivePlants','UsefulPlantsTro
            'NorthAfrica','TropicalAfrica','Reunion','Mauritius','ComoroIslands','EasternMediterranean','Malaysia','Japan',
            'Nepal','NewCaledonia','Hawaii','FrenchPolynesia']
 def get(i):
-        if not os.path.exists(countryls[i]+'.xls'):
-                wb=Workbook()
-                ws=wb.active
-                ws.append(['Species','common name','photo','observation','Family'])
-                wb.save(countryls[i]+'.xlsx')
-                # f=open(countryls[i]+'.xls','a',encoding='utf-8')
-                # f.write('Species'+'\t')
-                # f.write('common name'+'\t')
-                # f.write('photo'+'\t')
-                # f.write('observation'+'\t')
-                # f.write('Family'+'\n')
-                # f.close()
-        else:
-                print('please remove '+countryls[i]+'.xls'+' and then try again')
-                return;
-        for page in range(100):
-                url2=baseurl+countrycodels[i] + '/species?pageSize=400&page='+str(page)+'&lang=en&sortBy=images_count&sortOrder=desc&illustratedOnly=true'
-                browser.get(url2)
-                a=browser.find_element(By.CSS_SELECTOR,'pre').text
-                b=re.findall('name(.*?)searchTerms"',a)
-                print('---------------------------')
-                print(countryls[i]+'  page NO.' + str(page)+' lenth:'+str(len(b)))
-                if (len(b)==0):
-                        print(countryls[i]+'    over')
-                        return
+       if not os.path.exists(countryls[i]+'.xls'):
+              wb=Workbook()
+              ws=wb.active
+              ws.append(['Species','common name','photo','observation','Family'])
+              wb.save(countryls[i]+'.xlsx')
 
-                for item in b:
-                        name=re.findall('":"(.*?)","auth',item)
-                        auth=re.findall('author":"(.*?)"',item)
-                        commonname=re.findall('commonNames":\["(.*?)"',item)
-                        photo=re.findall('imagesCount":(.*?),"',item)
-                        observation=re.findall('observationsCount":(.*?),"',item)
-                        family=re.findall('family":"(.*?)"',item)
-                        
-                        if len(name)==0:
-                               name='NULL'
-                        else:
-                               name=name[0]
-                        
-                        if len(auth) == 0:
-                               auth='NULL'
-                        else:
-                               auth=auth[0]
+       else:
+              print('please remove '+countryls[i]+'.xls'+' and then try again')
+              return
+       for page in range(10000):
+              time1=time.mktime(time.localtime())
+              data=[[countryls[i]]]
+              url2=baseurl+countrycodels[i] + '/species?pageSize=400&page='+str(page)+'&lang=en&sortBy=images_count&sortOrder=desc&illustratedOnly=true'
+              browser.get(url2)
+              r=browser.find_element(By.CSS_SELECTOR,'pre').text
+              # r=requests.get(url2,headers=headers)
+              b=re.findall('name(.*?)searchTerms"',r)
+              time2=time.mktime(time.localtime())
+              
+              print('---------------------------')
+              print(countryls[i]+'  page NO.' + str(page)+' lenth:'+str(len(b)))
+              if (len(b)==0):
+                     print(countryls[i]+'    over')
+                     return
 
-                        if len(commonname)==0:
-                               commonname='NULL'
-                        else:
-                               commonname=commonname[0]
-                        
-                        if len(photo)==0:
-                               photo='NULL'
-                        else:
-                               photo=photo[0]
-                        
-                        if len(observation)==0:
-                               observation='NULL'
-                        else:
-                               observation=observation[0]
-                        
-                        if len(family)==0:
-                               family='NULL'
-                        else:
-                               family=family[0]
-                        wb=load_workbook(countryls[i]+'.xlsx')
-                        ws=wb.active
-                        ws.append([name+' '+auth,commonname,photo,observation,family])
-                        wb.save(countryls[i]+'.xlsx')
-                print('---------------------------')
+              for item in b:
+                     name=re.findall('":"(.*?)","auth',item)
+                     auth=re.findall('author":"(.*?)"',item)
+                     commonname=re.findall('commonNames":\["(.*?)"',item)
+                     photo=re.findall('imagesCount":(.*?),"',item)
+                     observation=re.findall('observationsCount":(.*?),"',item)
+                     family=re.findall('family":"(.*?)"',item)
+                     
+                     if len(name)==0:
+                            name='NULL'
+                     else:
+                            name=name[0]
+                     
+                     if len(auth) == 0:
+                            auth='NULL'
+                     else:
+                            auth=auth[0]
 
+                     if len(commonname)==0:
+                            commonname='NULL'
+                     else:
+                            commonname=commonname[0]
+                     
+                     if len(photo)==0:
+                            photo='NULL'
+                     else:
+                            photo=photo[0]
+                     
+                     if len(observation)==0:
+                            observation='NULL'
+                     else:
+                            observation=observation[0]
+                     
+                     if len(family)==0:
+                            family='NULL'
+                     else:
+                            family=family[0]
+                     name=name+' '+auth
+                     data.append([name,commonname,photo,observation,family])
+              t=multiprocessing.Process(target=savedata,args=(data,))
+              t.start()
+                     #    wb=load_workbook(countryls[i]+'.xlsx')
+                     #    ws=wb.active
+                     #    ws.append([name+' '+auth,commonname,photo,observation,family])
+                     #    wb.save(countryls[i]+'.xlsx')
+              print('timecost ' +str(time2-time1))
+              print('---------------------------')
+              
+def savedata(data):
+    bookname=data[0][0]
+    data.remove(data[0])
+    wb=load_workbook(bookname+'.xlsx')
+    ws=wb.active
+    for item in data:
+        ws.append(item)
+    wb.save(bookname+'.xlsx')
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     print('请输入要下载的序号，如0，1，2,输入999下载全部')
     i=0
     for item in countryls:
