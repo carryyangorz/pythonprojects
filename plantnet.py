@@ -144,49 +144,62 @@ def download_species(name,num,typeindex):
           return
     print(name+' searching...')
     itemnum=0
-    nameurl='https://api.plantnet.org/v1/projects/namerica/species?pageSize=50&page=0&lang=en&search='+name+'&sortBy=images_count&sortOrder=desc'
+    nameurl='https://api.plantnet.org/v1/projects/the-plant-list/species?pageSize=50&page=0&lang=en&search='+name+'&sortBy=images_count&sortOrder=desc'
     r=requests.get(nameurl,headers=headers)
-    auth=re.findall('"author":"(.*)","fam',r.text)[0]
+    try:
+       auth=re.findall('"author":"(.*?)","fam',r.text)[0]
+    except:
+          print(name+' not found please try again later')
+          return
     searchname=name.replace(' ','%20')
     if auth!='':
        searchname=searchname+'%20'+auth
-    url='https://identify.plantnet.org/namerica/species/'+searchname+'/data'
+    url='https://identify.plantnet.org/the-plant-list/species/'+searchname+'/data'
     print(searchname)
     browser.get(url)
     js="var q=document.documentElement.scrollTop=100000"
     browser.execute_script(js)
-    sleep(100)
+    sleep(120)
     try:
        father=browser.find_element(By.CSS_SELECTOR,'nav.card-header')
     except:
           print(name+' not found please try again later')
+       #    browser.quit()
           return
     if not os.path.exists(name+'//'+name+'_'+specie_type_ls[typeindex]+'.xlsx'):
         wb=Workbook()
         ws=wb.active
         ws.append(['图片名','来源','网址'])
         wb.save(name+'//'+name+'_'+specie_type_ls[typeindex]+'.xlsx')
+    flag=True
     for i in range(6):
        # i=species_t%6
+       if flag==False:
+             break
        type=father.find_elements(By.CSS_SELECTOR,'li.nav-item')
        print(name+'  types: '+str(len(type)))
        if i>=len(type):
              break
        b=type[i].find_element(By.CSS_SELECTOR,'a')
-       species_type=b.find_element(By.CSS_SELECTOR,'img').get_attribute('alt').capitalize()
+       b.send_keys(Keys.ENTER)
+       species_type=b.find_element(By.CSS_SELECTOR,'img').get_attribute('alt')
+       species_type=species_type.capitalize()
+       print(name + '   '+species_type)
        if typeindex!=9:
+       #       print(name + '   '+species_type+'   '+specie_type_ls[typeindex])
              if species_type!=specie_type_ls[typeindex]:
               #      print('ssssssssssssssssssssssssssssssssssssssssssssssssssssss')
                    continue   
-       print('--------------------------------------------------')
-       b.send_keys(Keys.ENTER)
+             else:
+                   flag=False
+       # print('--------------------------------------------------')
        sleep(4)
        # species_type=specie_type_ls[i]
        while True:
               a=browser.find_elements(By.CSS_SELECTOR,"img.img-fluid")
               js="var q=document.documentElement.scrollTop=100000"
               browser.execute_script(js)
-              sleep(10)
+              sleep(8)
               # hei=0
               # for y in range(5):
               #       hei+=1000
@@ -250,7 +263,7 @@ def download_species(name,num,typeindex):
        i=0
        flag=1
        while flag:
-              for j in range(40):
+              for j in range(20):
                      if i>len(ls1)-1:
                             flag=0
                             break
@@ -260,12 +273,13 @@ def download_species(name,num,typeindex):
                      # if i>len(bb):
                      #         break
                      pp.start()
-              # ppls.append(pp)
+              ppls.append(pp)
        #      f=open(target+'\\'+target+'.txt','a')
        #      f.write('\n'+als[i]+'_'+str(i)+'.jpg''\t'+bls[i]+'\t'+bls[i].replace('midthumb','smthumb')+'\t'+cls[i]+'\t'+dls[i])
        #      f.close()
-       #  for thread in ppls:
-       #      thread.join()
+              for thread in ppls:
+                     thread.join()
+#     browser.quit()
 def download(data):
     
     picurl=data[0]
@@ -281,7 +295,6 @@ def download(data):
         r=requests.get(picurl,headers=headers)#,verify=False)
     except:
         print('error')
-        # continue
         return
     f=open(name+'\\'+name+'_'+species_type+'_'+picid+'.jpg','wb')
     # r.raise_for_status()
