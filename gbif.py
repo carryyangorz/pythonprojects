@@ -37,7 +37,11 @@ license_ls=['CC0_1_0','CC_BY_4.0','CC_BY-NC_4_0','UNSPECIFIED','UNSUPPORTED']
 record_ls=['OBSERVATION','MACHINE_OBSERVATION','HUMAN_OBSERVATION',
            'MATERIAL_SAMPLE','MATERIAL_CITATION','PRESERVED_SPECIMEN','FOSSIL_SPECIMEN','LIVING_SPECIMEN','OCCURRENCE']
 def download_species(name,num,licenseindex,recordindex):
-
+    if not os.path.exists(name+'//'):
+       os.makedirs(name+'//')
+    else:
+          print(name+' already exists,pass')
+          return    
     # if not os.path.exists(name+'//'+name+'.xlsx'):
         # wb=Workbook()
         # ws=wb.active
@@ -56,11 +60,7 @@ def download_species(name,num,licenseindex,recordindex):
         taxon_key=re.findall('"key":(.*?),"nameKey',r.text)[0]
     except:
          print(name +' not found')
-    if not os.path.exists(name+'//'):
-       os.makedirs(name+'//')
-    else:
-          print(name+' already exists,pass')
-          return    
+
     #############################################################
     page=0
     totalnum=0
@@ -85,8 +85,8 @@ def download_species(name,num,licenseindex,recordindex):
         ################################################################################
         while flag:
             
-            for j in range(2):
-                    # ppls=[]
+            for j in range(20):
+                    ppls=[]
                     if i>=len(picid):
                         flag=False
                         # print('sssssssssssssssss')
@@ -101,13 +101,14 @@ def download_species(name,num,licenseindex,recordindex):
                     i=i+1
                     totalnum += 1
                     pp.start()
-            #         ppls.append(pp)
-            # for item in ppls:
-            #         item.join()
+                    ppls.append(pp)
+            for item in ppls:
+                    item.join()
         ####################################################################################
         # for item in picid:
         #     data=[item,name]
         #     download_one(data)
+    sleep(1)
 
 def download_one(data):
     id=data[0]
@@ -117,7 +118,7 @@ def download_one(data):
     browser=webdriver.Chrome(options=option,desired_capabilities=capa)
     browser.get(url1)
     try:
-        WebDriverWait(browser, 15, 0.5).until(EC.presence_of_element_located((By.CSS_SELECTOR,'a.imgContainer')))
+        WebDriverWait(browser, 20, 0.5).until(EC.presence_of_element_located((By.CSS_SELECTOR,'a.imgContainer')))
     except:
         print(name+' error1 -1')
         browser.close()
@@ -173,9 +174,6 @@ def download_one(data):
          datals1.append('NULL')
     # print(datals1)
     ggg=browser.find_elements(By.CSS_SELECTOR,'section.term-block')
-    # print('===========================================')
-    # print(ggg[-2].text)
-    # print('===========================================')
     ddd=ggg[-2].find_element(By.CSS_SELECTOR,'div.term-block__terms')          
     eee=ddd.find_elements(By.CSS_SELECTOR,'tr')
     data2dic={
@@ -252,6 +250,4 @@ if __name__ == "__main__":
             try:
                 download_species(item,num,licenseindex,recordindex)
             except:
-                 print(item+' over')
-            # os.system('taskkill /im chromedriver.exe /F')
-            # os.system('taskkill /im chrome.exe /F')
+                print(item+' over')
