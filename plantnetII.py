@@ -49,7 +49,7 @@ def savedata(data):
     for item in data:
         ws.append(item)
     wb.save(bookname+'.xlsx')
-
+ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
 def download_species(name):
     if os.path.exists(name+'.xlsx'):
         print(name+' already exists, pass')
@@ -93,8 +93,13 @@ def download_species(name):
        wb=Workbook()
        ws=wb.active
        ws.append(['搜索名','网址','学名','别名','英文名'])
+    name=ILLEGAL_CHARACTERS_RE.sub(r'', name)
+    searchname=ILLEGAL_CHARACTERS_RE.sub(r'', searchname)
+    b=ILLEGAL_CHARACTERS_RE.sub(r'', b)
+
     for item in c:
         item=item.replace('"','')
+        item=ILLEGAL_CHARACTERS_RE.sub(r'', item)
         ws.append([name,url,searchname.replace('%20',' '),b,item])
         print(name+' +1')
 
@@ -116,7 +121,11 @@ if __name__ == "__main__":
     f.close()
     
     for item in ls:
-           download_species(item)
+        try:
+            download_species(item)
+        except:
+            print(item+' error')
+            pass
 #     name='Paulownia tomentosa'
 #     download_species(name)
     os.system ("pause")
