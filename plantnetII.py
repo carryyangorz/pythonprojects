@@ -68,23 +68,20 @@ def download_species(name):
        searchname=searchname+'%20'+auth
     url='https://identify.plantnet.org/the-plant-list/species/'+searchname+'/data'
     print(url)
+    # try:
+    r=requests.get(url,headers=headers)
+
+    a=r.text.replace('\n','')
     try:
-       r=requests.get(url,headers=headers)
-
-       a=r.text.replace('\n','')
-       b=re.findall('text-secondary mt-n5">(.*?)</h5>',a)[0]
-       b=b.replace('\t','')
-       # print(b)
-       # d=re.findall('commonNames:\[(.*?)\],synonyms',a)[0]
-       # d=d.replace('\t','')
-       # d=d.replace('"','')
-       # print(d)
-       # c=d.split(',')
-
-       url2='https://api.plantnet.org/v1/projects/the-plant-list/species/'+searchname+'/vernaculars?lang=en'
-       r=requests.get(url2,headers=headers)
-       c=re.findall('English","terms":\[(.*?)\]}',r.text)[0]
-       c=c.split(',')
+        b=re.findall('text-secondary mt-n5">(.*?)</h5>',a)[0]
+        b=b.replace('\t','')
+    except:
+        b=" "
+    try:
+        url2='https://api.plantnet.org/v1/projects/the-plant-list/species/'+searchname+'/vernaculars?lang=en'
+        r=requests.get(url2,headers=headers)
+        c=re.findall('English","terms":\[(.*?)\]}',r.text)[0]
+        c=c.split(',')
     except:
         print(name+' not found2')
         return
@@ -110,7 +107,6 @@ def download_species(name):
       
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-
     f = open("plantnet.txt",encoding='utf-8')
     line = f.readline()
     ls=[]
@@ -126,6 +122,6 @@ if __name__ == "__main__":
         except:
             print(item+' error')
             pass
-#     name='Paulownia tomentosa'
-#     download_species(name)
+    # name='Abies amabilis'
+    # download_species(name)
     os.system ("pause")
