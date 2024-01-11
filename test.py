@@ -7,54 +7,60 @@ import json
 from openpyxl import Workbook
 from openpyxl import load_workbook
 
-from selenium import webdriver
-from selenium.webdriver import ChromeOptions
 from time import sleep
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait 
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
 from threading import Timer
 import threading
-capa = DesiredCapabilities.CHROME
-capa["pageLoadStrategy"] = "eager"
-option=ChromeOptions()
-# option.add_argument('--headless')
-option.add_argument('--no-sandbox')
-option.add_argument('log-level=3') #INFO = 0 WARNING = 1 LOG_ERROR = 2 LOG_FATAL = 3 default is 0
-option.add_experimental_option('excludeSwitches',['enable-automation'])
-browser=webdriver.Chrome(options=option,desired_capabilities=capa)
-browser.implicitly_wait(6)
-name='Abutilon theophrasti Medik.'
-url='https://identify.plantnet.org/weeds/species/Abutilon%20theophrasti%20Medik./data'
-browser.get(url)
+
 num=200
-itemnum=0
-# try:
-#     wait = WebDriverWait(browser, 2)
-#     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,"div.card-body")))
-# except:pass
-for i in range(10000):
-    js="var q=document.documentElement.scrollTop=100000"
-    browser.execute_script(js)
-    sleep(2)
-    a=browser.find_elements(By.CSS_SELECTOR,"img.img-fluid")
-    if itemnum==len(a):
-        print('not increasing')
-        break
-    itemnum=len(a)
-    print(str(len))
-    if itemnum>num:
-        break
+c[i]num=0
+headers={
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36'
+        }
 
+# url='https://plantsservices.sc.egov.usda.gov/api/PlantProfile?symbol=ABAB'
+# r=requests.get(url,headers=headers)
+# group=re.findall('"Group":"(.*)","RankId',r.text)[0]
+# Durations=re.findall('"Durations":(.*?),"GrowthHabits',r.text)[0]
+# Durations=Durations.replace(',','\n')
+# Durations=Durations.replace('["','')
+# Durations=Durations.replace('"]','')
+# print(Durations)
+# GrowthHabit=re.findall('"GrowthHabits":(.*?),"NativeStatuses',r.text)[0]
+# GrowthHabit=GrowthHabit.replace(',','\n')
+# GrowthHabit=GrowthHabit.replace('"','')
+# GrowthHabit=GrowthHabit.replace('[','')
+# GrowthHabit=GrowthHabit.replace(']','')
+# print(GrowthHabit)
+# GrowthHabit=re.findall('"NativeStatuses":(.*?),"MapCoordinates',r.text)[0]
+# reg=re.findall('Region":"(.*?)","Status',GrowthHabit)
+# status=re.findall('Status":"(.*?)","Type',GrowthHabit)
+# print(len(reg))
+# GrowthHabit=''
+# for i in range(0,len(reg)):
+#     # print(reg[i]+' '+status[i])
+#     # print('=====')
+#     GrowthHabit+=reg[i]+' '+status[i]+'\n'
+# print(GrowthHabit)
+keydick={
+    "Field": "Symbol",
+    "MasterId": 65791,
+    "Offset": "",
+    "SortBy": "sortSciName",
+    "Text": "ABAB"
 
-for i in range(min(itemnum,num)):
-    print(a[i].get_attribute('src'))
-    picurl=a[i].get_attribute('src')
-    picurl=picurl.replace('/s/','/o/')
-    picid=re.findall('/o/(.*)',picurl)
-    print(picurl)
-    print(picid)
+}
+a=requests.post('https://plantsservices.sc.egov.usda.gov/api/PlantProfile/getDownloadDistributionDocumentation',data=keydick)
+a=json.loads(a.text)
+# print(a['PlantResults'])
+b=a['PlantResults'][0]
+c=b['PlantsDistributionResults']
+wb=Workbook()
+ws=wb.active
+ls=[]
+for i in range(0,len(c)):
+# for c[i] in c:
+    # print(c[i])
+    ls.append(c[i]["Symbol"]+','+c[i]["Country"]+','+c[i]["Country"]+','+c[i]["State"]+','+c[i]["StateFIP"]+','+c[i]["County"]+','+c[i]["CountyFIP"])
 
-
+print(ls)
