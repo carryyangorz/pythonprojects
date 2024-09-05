@@ -37,10 +37,9 @@ def get(name):
     tar = name.replace(' ', '+')
     url = 'https://api.inaturalist.org/v1/taxa/autocomplete?q=' + tar + '&per_page=10&locale=zh-CN&preferred_place_id='
     r = requests.get(url, headers=headers)
-
     try:
         id = re.findall('"id":([0-9]{0,10}),"', r.text)[0]
-        print('id: '+id)
+        # print('id: '+id)
     except:
         # pass
         print(name + ' no result, over')
@@ -51,7 +50,7 @@ def get(name):
     r=requests.get(finalurl,headers=headers)
     r=json.loads(r.text)
     totalcount=r['total_results']
-    print(type(totalcount))
+    # print(type(totalcount))
     print(name+' '+str(totalcount) + ' 条结果')
     if totalcount == 0:
         print('no result')
@@ -63,11 +62,12 @@ def get(name):
         # print(str(pagenum))
         # if pagenum*100>totalcount:
         #     break
-        print('addedcount'+str(addedcount))
+        print('addedcount '+str(addedcount))
         if addedcount>=totalcount:
+            print(name+' over')
             return
         finalurl = 'https://api.inaturalist.org/v1/observations/species_counts?verifiable=any&spam=false&taxon_id=' + id + '&locale=zh-CN&page=' + str(pagenum) + '&per_page=100'
-        print('1 '+finalurl)
+        # print('1 '+finalurl)
         r=requests.get(finalurl,headers=headers)
         sleep(1)
         cnnamels=[]
@@ -76,7 +76,10 @@ def get(name):
         countls=[]
         picurlls=[]
         a=json.loads(r.text)
-        print(len(a['results']))
+        
+        # print(len(a['results']))
+        if len(a['results'])==0:
+            return
         for item in a['results']:
             # print('...')
             try:
@@ -104,7 +107,13 @@ def get(name):
             # print(count)
             # print(picurl)
             # print(license)
-
+            if enname==None:
+                enname='null'
+            if cnname==None:
+                cnname='null'
+            
+            if license == None:
+                license = 'null'
             if count == None:
                 count=0
             cnnamels.append(cnname)
@@ -117,12 +126,18 @@ def get(name):
         flag=True
         i=0
         while flag:
-            for _ in range(8):
+            for k in range(8):
                 if i>len(cnnamels)-1:
-                        flag=False
-                        continue
+                    flag=False
+                    continue
+                # print(cnnamels[i])
+                # print(ennamels[i])
+                # print(countls[i])
+                # print(picurlls[i])
+                # print(licensels[i])
                 picname=ennamels[i]+'_'+cnnamels[i]
-                print('+1  ps'+str(i)+'  '+str(len(cnnamels)))
+                # print('+1  ps'+str(i)+'  '+str(len(cnnamels)))
+                # print(picurlls[i])
                 data=[picname,name,picurlls[i]]
                 pp=Process(target=download,args=(data,))
                 # i=i+1
@@ -134,10 +149,10 @@ def get(name):
                 f.write(picname + '\t' + str(countls[i])+'次观察' + '\t' + licensels[i] + '\t' + picname+'.jpg' + '\t' + picurlls[i] + '\n')
                 f.close()
                 i=i+1
-                addedcount+=1
+                addedcount=addedcount+1
+                print(name+'  '+str(addedcount))
             for thread in ppls:
                 thread.join()
-        print('here')
         pagenum+=1
     print(len(cnnamels)+'------------')
             # f = open(name + '\\' + picname+'.jpg', 'wb')
@@ -160,6 +175,8 @@ def download(data):
     name=data[1]
     picurl=data[2]
     picname=data[0]
+    if os.path.exists(name+'\\'+picname+'.jpg'):
+        return
     f=open(name+'\\'+picname+'.jpg','wb')
     try:
     #     if useproxy:
@@ -167,13 +184,14 @@ def download(data):
         # else:
             # r=requests.get(picurl,headers=headers)
     except:
-        print('error')
+        print('error:'+picurl)
+
         # continue
         return
     # r.raise_for_status()
     f.write(r.content)
     # i=i+1
-    print(name+'+1')
+    print(name+' +1')
     f.close()
 
 
@@ -191,7 +209,7 @@ if __name__ == '__main__':
         f.close()
     f = open('inaturalist.txt', 'r', encoding='utf-8')
     names = f.readlines()
-        
+     
     f.close()
     while index<len(names):
         item = names[index]
